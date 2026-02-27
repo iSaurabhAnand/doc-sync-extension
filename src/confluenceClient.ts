@@ -45,15 +45,19 @@ export class ConfluenceClient {
     if (!baseUrl) {
       throw new Error('docSync.confluenceBaseUrl is not configured');
     }
-    if (!email) {
-      throw new Error('docSync.confluenceEmail is not configured');
-    }
     if (!apiToken) {
       throw new Error('docSync.confluenceApiToken is not configured');
     }
 
     this.baseUrl = baseUrl.replace(/\/$/, '');
-    this.authHeader = 'Basic ' + Buffer.from(`${email}:${apiToken}`).toString('base64');
+
+    // Confluence Data Center / Server: PAT → Bearer token (no email needed)
+    // Confluence Cloud: API token → Basic base64(email:token)
+    if (email) {
+      this.authHeader = 'Basic ' + Buffer.from(`${email}:${apiToken}`).toString('base64');
+    } else {
+      this.authHeader = 'Bearer ' + apiToken;
+    }
   }
 
   static extractPageId(url: string): string {

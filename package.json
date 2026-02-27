@@ -42,12 +42,12 @@
         "docSync.confluenceEmail": {
           "type": "string",
           "default": "",
-          "description": "Confluence account email address"
+          "description": "Confluence Cloud only: your Atlassian account email. Leave empty when using a Personal Access Token (PAT) for Confluence Data Center / Server."
         },
         "docSync.confluenceApiToken": {
           "type": "string",
           "default": "",
-          "description": "Confluence API token (generate at id.atlassian.com/manage-profile/security/api-tokens)"
+          "description": "Confluence Cloud: API token from id.atlassian.com/manage-profile/security/api-tokens. Confluence Data Center/Server: Personal Access Token (PAT) — used as a Bearer token, no email required."
         }
       }
     }
