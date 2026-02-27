@@ -1,0 +1,64 @@
+{
+  "name": "doc-sync-agent",
+  "displayName": "Doc Sync Agent",
+  "description": "Compare source code against Confluence documentation using GitHub Copilot",
+  "version": "1.0.0",
+  "publisher": "doc-sync",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/doc-sync/doc-sync-agent"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["AI"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "doc-sync.agent",
+        "name": "doc-sync",
+        "fullName": "Doc Sync",
+        "description": "Compare workspace code against Confluence documentation and post a sync report",
+        "isSticky": false,
+        "commands": [
+          {
+            "name": "check",
+            "description": "Compare workspace code against a Confluence page and post a sync report"
+          }
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "Doc Sync",
+      "properties": {
+        "docSync.confluenceBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Confluence base URL, e.g. https://myorg.atlassian.net"
+        },
+        "docSync.confluenceEmail": {
+          "type": "string",
+          "default": "",
+          "description": "Confluence account email address"
+        },
+        "docSync.confluenceApiToken": {
+          "type": "string",
+          "default": "",
+          "description": "Confluence API token (generate at id.atlassian.com/manage-profile/security/api-tokens)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "@vscode/vsce": "^2.26.0"
+  }
+}
