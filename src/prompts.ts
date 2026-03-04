@@ -1,16 +1,24 @@
-import type { CodeSnapshot } from './codeReader.js';
+export const AGENT_SYSTEM_PROMPT =
+  'You are a senior documentation auditor with access to tools for exploring source code. ' +
+  'Your role is to compare actual source code against technical documentation and identify ' +
+  'factual discrepancies.\n\n' +
+  'APPROACH:\n' +
+  '1. Call list_workspace_files to understand the codebase structure\n' +
+  '2. Identify which files are most relevant based on the documentation content\n' +
+  '3. Call read_workspace_file for each relevant file (be selective — focus on files that ' +
+  'relate to documented components, APIs, or data flows)\n' +
+  '4. Repeat step 3 as needed until you have sufficient evidence\n' +
+  '5. Produce the final structured report\n\n' +
+  'ANALYSIS PRINCIPLES:\n' +
+  '- Focus strictly on facts — do not comment on writing style, formatting, or tone\n' +
+  '- Be precise and evidence-based: cite specific file paths, function names, or doc sections ' +
+  'when flagging a divergence\n' +
+  '- If code and docs agree, say so clearly\n' +
+  '- Read enough files to be thorough, but stop once you have sufficient coverage';
 
-export const SYSTEM_PROMPT =
-  'You are a documentation auditor. Your role is to compare source code against ' +
-  'technical documentation and identify factual discrepancies. Focus strictly on ' +
-  'facts — do not comment on writing style, formatting, or tone. Be precise and ' +
-  'evidence-based: cite specific file paths, function names, or doc sections when ' +
-  'flagging a divergence. If the code and doc agree, say so clearly.';
-
-export function buildComparisonPrompt(
+export function buildAgentInitialPrompt(
   docTitle: string,
   docContent: string,
-  codeSnapshot: CodeSnapshot,
   docType: 'hld' | 'lld' | 'auto',
 ): string {
   const today = new Date().toISOString().split('T')[0];
@@ -28,15 +36,6 @@ export function buildComparisonPrompt(
         'content, then apply the appropriate focus. State which type you detected at the ' +
         'start of your Summary.';
 
-  const truncationNote = codeSnapshot.truncated
-    ? '\n\n> **Note:** The code snapshot was truncated at 80,000 characters. ' +
-      'Some files may be missing from the analysis.'
-    : '';
-
-  const codeSection = codeSnapshot.files
-    .map(f => `### File: ${f.path}\n\`\`\`\n${f.content}\n\`\`\``)
-    .join('\n\n');
-
   return `${focusInstructions}
 
 ## Documentation to Audit
@@ -45,13 +44,11 @@ export function buildComparisonPrompt(
 
 ${docContent}
 
-## Source Code (${codeSnapshot.files.length} file${codeSnapshot.files.length === 1 ? '' : 's'}, ${codeSnapshot.totalChars.toLocaleString()} chars)${truncationNote}
-
-${codeSection}
-
 ---
 
-Produce a report in **exactly** this format — preserve all headings and labels verbatim:
+Start by calling list_workspace_files to discover the codebase, then read the files most relevant to the documentation above.
+
+Once you have gathered enough evidence, produce your report in **exactly** this format — preserve all headings and labels verbatim:
 
 ## Doc Sync Report — ${today}
 **Page:** ${docTitle}
@@ -71,6 +68,9 @@ Produce a report in **exactly** this format — preserve all headings and labels
 
 **What To Remove From Docs**
 (Bulleted list of things in docs that no longer exist in code, or "None".)
+
+**Files Analyzed**
+(Bulleted list of every file you read during the analysis.)
 
 **Confidence** HIGH|MEDIUM|LOW — brief reason (e.g. full code coverage, partial scope, etc.)`;
 }

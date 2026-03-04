@@ -35,6 +35,80 @@ export async function readWorkspaceCode(scopePath?: string): Promise<CodeSnapsho
   return snapshot;
 }
 
+/**
+ * Returns relative paths of all source code files in the workspace (or a scoped subdirectory).
+ * Used by the agent mode to let the model discover what files exist before reading them.
+ */
+export async function listWorkspaceFiles(scopePath?: string): Promise<string[]> {
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (!workspaceFolders || workspaceFolders.length === 0) {
+    throw new Error('No workspace folder is open');
+  }
+
+  const rootUri = workspaceFolders[0].uri;
+  const startUri = scopePath
+    ? vscode.Uri.joinPath(rootUri, scopePath)
+    : rootUri;
+
+  const paths: string[] = [];
+  await collectFilePaths(startUri, rootUri.path, paths);
+  return paths;
+}
+
+async function collectFilePaths(
+  dirUri: vscode.Uri,
+  rootPath: string,
+  paths: string[],
+): Promise<void> {
+  let entries: [string, vscode.FileType][];
+  try {
+    entries = await vscode.workspace.fs.readDirectory(dirUri);
+  } catch {
+    return;
+  }
+
+  entries.sort(([a], [b]) => a.localeCompare(b));
+
+  for (const [name, type] of entries) {
+    if (type === vscode.FileType.Directory) {
+      if (SKIP_DIRS.has(name)) {
+        continue;
+      }
+      await collectFilePaths(vscode.Uri.joinPath(dirUri, name), rootPath, paths);
+    } else if (type === vscode.FileType.File) {
+      const ext = getExtension(name);
+      if (!ALLOWED_EXTENSIONS.has(ext)) {
+        continue;
+      }
+      const fileUri = vscode.Uri.joinPath(dirUri, name);
+      paths.push(fileUri.path.slice(rootPath.length).replace(/^\//, ''));
+    }
+  }
+}
+
+/**
+ * Reads a single source code file by its workspace-relative path.
+ * Content is capped at MAX_FILE_CHARS to match existing snapshot limits.
+ */
+export async function readWorkspaceFile(relativePath: string): Promise<string> {
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (!workspaceFolders || workspaceFolders.length === 0) {
+    throw new Error('No workspace folder is open');
+  }
+
+  const rootUri = workspaceFolders[0].uri;
+  const fileUri = vscode.Uri.joinPath(rootUri, relativePath);
+
+  const bytes = await vscode.workspace.fs.readFile(fileUri);
+  let content = new TextDecoder('utf-8').decode(bytes);
+
+  if (content.length > MAX_FILE_CHARS) {
+    content = content.slice(0, MAX_FILE_CHARS) + '\n... [truncated]';
+  }
+
+  return content;
+}
+
 async function collectFiles(
   dirUri: vscode.Uri,
   rootPath: string,

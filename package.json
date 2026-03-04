@@ -2,7 +2,7 @@
   "name": "doc-sync-agent",
   "displayName": "Doc Sync Agent",
   "description": "Compare source code against Confluence documentation using GitHub Copilot",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "doc-sync",
   "license": "MIT",
   "repository": {
@@ -10,7 +10,7 @@
     "url": "https://github.com/doc-sync/doc-sync-agent"
   },
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.95.0"
   },
   "categories": ["AI"],
   "activationEvents": ["onStartupFinished"],
@@ -27,6 +27,10 @@
           {
             "name": "check",
             "description": "Compare workspace code against a Confluence page and post a sync report"
+          },
+          {
+            "name": "version",
+            "description": "Show the Doc Sync extension version"
           }
         ]
       }
@@ -48,6 +52,19 @@
           "type": "string",
           "default": "",
           "description": "Confluence Cloud: API token from id.atlassian.com/manage-profile/security/api-tokens. Confluence Data Center/Server: Personal Access Token (PAT) — used as a Bearer token, no email required."
+        },
+        "docSync.model": {
+          "type": "string",
+          "default": "gpt-4o",
+          "enum": ["gpt-4o", "gpt-4o-mini", "o1", "o1-mini", "gpt-4"],
+          "enumDescriptions": [
+            "GPT-4o — best quality, free via GitHub Copilot (recommended)",
+            "GPT-4o Mini — faster, lower cost",
+            "o1 — advanced reasoning (slower)",
+            "o1 Mini — reasoning, lower cost",
+            "GPT-4 — legacy model"
+          ],
+          "description": "Language model to use via GitHub Copilot for documentation analysis."
         }
       }
     }
@@ -56,7 +73,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "devDependencies": {
-    "@types/vscode": "^1.90.0",
+    "@types/vscode": "^1.95.0",
     "@types/node": "^20.0.0",
     "typescript": "^5.4.0",
     "@vscode/vsce": "^2.26.0"
